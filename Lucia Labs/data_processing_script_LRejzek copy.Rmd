@@ -1,0 +1,299 @@
+---
+title: 'PSY221A: Data Validation and Wrangling'
+author: "Lucia Rejzek"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+H1: People with lower perceived social class will have more collectivist attitudes. 
+
+H2: People who value gender equality will report higher overall romantic love with their partner.
+
+## 1. Load the package and data
+
+```{r load, message=FALSE}
+#load the codebook package
+rm(list = ls())
+library(codebook)
+
+#load data/raw/data_doctored.csv
+raw <- read.csv("data/raw/data_doctored.csv")
+
+#check row and column counts, and inspect the first few rows
+dim(raw)
+head(raw[,c("ResponseId", "Sex_birth")])
+str(raw)
+
+#make data with ID, gender equality, collectivism/individualism values, and love values; keep raw unchanged
+
+data <- raw[,c("ResponseId","cot_class",
+               "Individualism_col_1", "Individualism_col_2",
+               "Individualism_col_3", "Individualism_col_4",
+               "Gender_Equality_1",
+               "Gender_Equality_2", "Gender_Equality_3",
+               "Love_1", "Love_2", "Love_3", "Love_4",
+               "Love_5", "Love_6", "Love_7", "Love_8",
+               "Love_9", "Love_10", "Love_11", "Love_12",
+               "Love_13", "Love_14", "Love_15")]
+dim(data)
+str(data)
+
+```
+
+
+## 2. Check participant IDs
+
+```{r participant_ids}
+
+#count na - there is 1 NA for response ID, and 17093 for gender equality
+sum(is.na(data$ResponseId))
+sum(is.na(data$Gender_Equality_1))
+
+#count blank - there are zero
+sum(data$ResponseId=="", na.rm = TRUE)
+
+#count duplicates - 0 duplicates!
+sum(duplicated(data$ResponseId))
+
+#can get a nice big summary description block!
+summary(data$ResponseId)
+
+#inspect records with missing or blank IDs
+missingID <- which(is.na(data$ResponseId))
+print(data[missingID,]) # whole row is NAs so fine to delete
+
+#remove the known empty record with no ID, then check the row count - should be 1 less
+data <- data[!is.na(data$ResponseId),]
+
+```
+
+
+## 3. Clean perceived social class 
+
+```{r social class record }
+# codebook: cot_class, 1=Lower; 2=Lower middle; 3=Middle; 4=Upper middle; 5=Upper.
+table(data$cot_class, useNA = "ifany") # look at data spread, a lot of NA
+
+#turn cot_class into a factor with labels Lower, Lower middle, Middle, Upper Middle, and Upper
+
+data$cot_class <- factor(data$cot_class,
+                         c(1, 2, 3, 4, 5),
+                         c("Lower", "Lower Middle", "Middle", 
+                           "Upper Middle", "Upper"))
+
+```
+
+
+## 4. Validate collectivism values, calculate mean and make H1 dataset
+
+```{r validate collective behavior}
+#group all 3 individualism/collectivism variables and make them numeric
+
+data[,3:23] <- apply(data[,3:23], 2, function(x) ifelse(x== -99, NA, x))
+
+collect_items <- c("Individualism_col_1", "Individualism_col_2","Individualism_col_4")
+
+for (i in collect_items) {
+  data[data[, i] %in% c("-99", "N/A", "NA", ""), i] <- NA
+  
+  data[, i] <- as.numeric(data[, i]) }
+
+
+#see summary of variables
+summary(data[,collect_items])
+
+#count NAs
+colSums(is.na(data[,collect_items]))
+
+#check if data is all within range
+colSums(data[, collect_items] < 1 | data[, collect_items] > 7, na.rm = TRUE)
+
+
+#make h1Data with ID, socioeconomic class, and cleaned collectivism variables, and avg value for overall collectivism (avg of q1,2,4)
+
+h1_data <- data %>%
+  select("ResponseId", "cot_class", "Individualism_col_1", "Individualism_col_2", "Individualism_col_4") %>%
+  na.omit()
+  
+
+#yipppeee data is clean
+summary(h1_data)
+
+
+#some basic subtraction, total number of NAs was 19,555 and original number of observations was 117,293 so that would leave us with 97738 observations left, but then 6 got filtered out because they were -99, leaving us with the final number in h1_data being 97732
+#117293 - 97732 = 19561 (19555 NAs + 6 -99 )
+
+#calculate means
+
+h1_data$collect_avg <- rowMeans(h1_data[, c(3:5)])
+
+#final data
+h1_data <- h1_data %>%
+  select("ResponseId", "cot_class", "collect_avg")
+
+```
+
+
+## 5. Validate equality and love data
+```{r make clean h2 dataset subset}
+#load data
+h2_data_raw <- data %>%
+  select("ResponseId", "Gender_Equality_1",
+         "Gender_Equality_2", "Gender_Equality_3",
+         "Love_1", "Love_2", "Love_3", "Love_4",
+         "Love_5", "Love_6", "Love_7", "Love_8",
+         "Love_9", "Love_10", "Love_11", "Love_12",
+         "Love_13", "Love_14", "Love_15")
+
+
+# check for NAs, there are a lot, pick highest value and filter that one
+#still a few -99 and empty spots, filter these p
+summary(h2_data_raw)
+
+
+#cleaning data - turn all missing data into NA
+equality_items <- paste0("Gender_Equality_", 1:3)
+for (item in equality_items) {
+   h2_data_raw[h2_data_raw[, item] %in% c("-99", "N/A", "NA", ""), item] <- NA
+   h2_data_raw[, item] <- as.numeric(h2_data_raw[, item])
+}
+
+#check unique data, mainly nas now
+summary(h2_data_raw[, equality_items])
+
+#check that all values are in range
+colSums(h2_data_raw[, equality_items] < 1 |
+         h2_data_raw[, equality_items] > 7, na.rm = TRUE)
+
+#cleaning data - turn all missing data into NA
+love_items <- paste0("Love_", 1:15)
+for (item in love_items) {
+   h2_data_raw[h2_data_raw[, item] %in% c("-99", "N/A", "NA", ""), item] <- NA
+   h2_data_raw[, item] <- as.numeric(h2_data_raw[, item])
+}
+
+#check that all data is in range
+colSums(h2_data_raw[, love_items] < 1 |
+         h2_data_raw[, love_items] > 5, na.rm = TRUE)
+
+#remove NAs
+h2_data_cln <- na.omit(h2_data_raw)
+
+#reverse code values
+h2_data_rev <- h2_data_cln %>%
+  mutate(across("Gender_Equality_1":"Gender_Equality_3", ~ 8 - .)) %>%
+  rename("Gender_Equality_1R" = "Gender_Equality_1", "Gender_Equality_2R" = "Gender_Equality_2", "Gender_Equality_3R" = "Gender_Equality_3" )
+```
+
+## 6. Create mean variables for H2 
+```{r mean variables for H2}
+#likert scales
+#gender equal: 1-7, higher means more value of gender roles, so reverse code shows value of gender equality
+#overall love: 1-5, higher means more overall romantic love
+
+#h2 avgs, means of both gender equality and love questions
+h2_data_avgs <- h2_data_rev %>%
+  mutate(h2_data_rev, 
+         love_avg = rowMeans(select(h2_data_rev,
+                                              c("Love_1":"Love_15")),
+                                         na.rm = TRUE)) %>%
+  mutate(h2_data_rev, 
+         gen_eq_avg = rowMeans(select(h2_data_rev,
+                                              c("Gender_Equality_1R":"Gender_Equality_3R")),
+                                         na.rm = TRUE))
+
+#just final values!
+h2_data <- h2_data_avgs %>%
+  select("ResponseId", "gen_eq_avg", "love_avg")
+```
+
+
+## 7. Check the final tables
+
+```{r final_tables}
+#check rows, columns, types, and missing values in h1Data
+#one row per participant, one column per variable
+dim(h1_data)
+str(h1_data)
+head(h1_data)
+colSums(is.na(h1_data))
+table(h1_data$cot_class,useNA="ifany")
+range(h1_data$collect_avg)
+sum(duplicated(h1_data$ResponseId))
+
+#repeat the checks for h2Data; both scores should be within 1-7
+dim(h2_data)
+str(h2_data)
+head(h2_data)
+colSums(is.na(h2_data))
+range(h2_data$love_avg)
+range(h2_data$gen_eq_avg)
+sum(duplicated(h2_data$ResponseId))
+
+#all of it checks out! yay!
+```
+
+## 8. Add labels and generate codebooks
+
+The descriptions come from the original codebook and our scoring decisions.
+`compact_codebook()` adds summaries from the actual data. Knit the Rmd to
+display the formatted codebooks.
+
+```{r variable_labels}
+#add a description to each h1Data column, in column order
+#include the source codes, meaning, and units
+var_label(h1_data) <- c(
+  "Unique participant ID (ResponseId)",
+  "Self-reported social class: 1=Lower, 2=Lower middle, 3=Middle, 4=Upper middle, 5=Upper; stored as labeled categories.",
+  "Collectivism: mean of Individualism_col_1, 2, and 4; all three responses required. Items are 1=Definitely disagree to 7 = Definitely agree. No reversal; higher scores indicate greater collectivism."
+)
+
+#add a description to each h2Data column, in column order
+#include response anchors and the commitment scoring rule
+var_label(h2_data) <- c(
+  "Unique participant ID (ResponseId)",
+  "Gender equality: mean of Gender_Equality_1-3 after reversing each item with 8 - x; all three responses required. Scores range from 1 to 7; higher scores indicate greater endorsement of gender equality.",
+  "Overall romantic love: mean of Love_1-15; all 15 responses required. Items are 1=Not at all to 5=Extremely. No reversal; higher scores indicate greater romantic love.")
+
+```
+
+H1 includes participants with an ID, valid reported perceived social class, and a valid average collectivisism score based on valid responses to 3 related questions. Factor level numbers in the generated table are internal R positions, not the original survey codes.
+
+```{r h1_codebook}
+#generate the h1Data codebook
+compact_codebook(h2_data)
+
+```
+
+H2 includes participants with an ID, average gender equality belief score based on 3 valid responses to gender equality questions and average overall romantic love score based on 15 valid responses to love questions.
+
+```{r h2_codebook}
+#generate the h2Data codebook
+compact_codebook(h2_data)
+
+```
+
+## 9. Save the final tables
+
+```{r save}
+#create data/processed_data if needed
+dir.create("data/processed_data",recursive=T,showWarnings=F)
+
+#save h1Data and h2Data without an extra row-number column
+write.csv(h1_data,"data/processed_data/LR_h1_data.csv",row.names=F)
+write.csv(h2_data,"data/processed_data/LR_h2_data.csv",row.names=F)
+
+#read the files back and confirm their dimensions
+h1_saved <- read.csv("data/processed_data/LR_h1_data.csv")
+h2_saved <- read.csv("data/processed_data/LR_h2_data.csv")
+dim(h1_saved)
+dim(h2_saved)
+
+```

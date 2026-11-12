@@ -8,7 +8,6 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -28,9 +27,9 @@ library(ggrain)
 
 ```{r loadData}
 #load processed data
-h1_data <- read.csv("data/processed_data/LRpractice_h1.csv")
+h1_data <- read.csv("data/processed_data/LR_h1_data.csv")
 
-h2_data <- read.csv("data/processed_data/LRpractice_h2.csv")
+h2_data <- read.csv("data/processed_data/LR_h2_data.csv")
 ```
 
 ## H1 - RainCloud Plot and Boxplot

@@ -1,0 +1,115 @@
+---
+title: "PSY221A: Descriptive Statistics"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## 1. Load the processed data
+
+```{r load}
+# Open the project's .Rproj file before running chunks.
+# Install psych once in the Console if needed: install.packages("psych")
+rm(list = ls())
+
+install.packages("psych")
+library(psych)
+
+h1Data <- read.csv("data/processed_data/practice_h1.csv")
+h2Data <- read.csv("data/processed_data/practice_h2.csv")
+
+
+
+```
+
+## 2. Look at the distribution first
+
+```{r histogram}
+# A histogram groups numerical values into intervals (bins).
+# Bar height shows how many observations fall in each interval.
+# Start by looking at the distribution before calculating summary statistics.
+hist(h1Data$preference_imp_physat)
+
+#making hist nicer!
+hist(h2Data$commitment,
+     main = "Distribution of relationship commitment",
+     xlab = "Relationship commitment (1-7)")
+
+
+# Add readable labels to the same histogram.
+```
+
+## 3. One statistic at a time
+
+```{r individual_statistics}
+# Mean: add the scores and divide by the number of observed responses.
+#na.rm = TRUE removes all the NAs in your dataset
+mean(h2Data$commitment, na.rm = TRUE) #5.83934
+
+# Median: the middle score after sorting the responses.
+median(h2Data$commitment, na.rm = TRUE) #6
+
+# Table: count how many people are in each category.
+#useNA = "ifany" says that if there is NA, it will give you an NA category and tell you how many
+table(h1Data$Sex_birth, useNA = "ifany")
+
+# Range: return the minimum and maximum, rather than their difference.
+range(h2Data$commitment, na.rm = TRUE)
+
+# IQR: the 75th percentile minus the 25th percentile. (middle 50% of data)
+IQR(h2Data$commitment, na.rm = TRUE)
+
+```
+
+## 4. Standardize a variable
+
+```{r standardize}
+# scale() uses z = (original score - mean) / standard deviation by default.
+# Keep the original commitment scores and store the standardized values separately.
+# scale() returns a matrix; as.numeric() makes a simple numeric column.
+
+#the long way...
+h2Data$commitment - mean(h2Data$commitment, na.rm = TRUE)/sd(h2Data$commitment, na.rm = TRUE)
+
+#the short way...
+h2Data$commitment_z <- scale(h2Data$commitment)
+
+# Standardized scores have mean approximately 0 and standard deviation 1.
+
+mean(h2Data$commitment_z, na.rm = TRUE) #basically zero
+
+sd(h2Data$commitment_z, na.rm = TRUE) #1
+```
+
+## 5. Covariance and correlation
+
+```{r association}
+# Covariance describes whether two variables tend to move together.
+# Positive: higher values tend to occur together. Negative: higher values tend to accompany lower values.
+# Its size depends on the units and is not restricted to -1 through 1.
+#use = complete.obs means you only use if there's observations for both
+cov(h2Data$commitment, h2Data$qoa, use = "complete.obs") # -0.3204
+
+# Pearson correlation expresses a linear association on a -1 to 1 scale.
+cor(h2Data$commitment, h2Data$qoa, use = "complete.obs") # -0.145
+#some sort of negative correlation going on
+
+# Make a correlation table: Select numerical variables only; do not include participant IDs or category codes.
+corData <- h2Data[,c("qoa", "commitment")]
+cor(corData, use = "complete.obs")
+# A correlation matrix gives the correlation for each pair of columns.
+# The diagonal is 1 because each variable is correlated with itself.
+```
+
+## 6. Several statistics at once
+
+```{r combined_summaries}
+# summary() reports minimum, quartiles, median, mean, maximum, and missing counts when present.
+summary(corData)
+
+# psych::describe() reports n, mean, SD, median, minimum, maximum, range width (max minus min), skewness, kurtosis, and other summaries.
+describe(corData)
+#what is kurtosis: about the shape of your distribution, about the tailedeness
+# However it does not report every statistic above: compute IQR, cov(), and cor() separately.
+```
+

@@ -1,0 +1,126 @@
+---
+title: "PSY221A: Descriptive Statistics"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## 1. Load the processed data
+
+```{r load}
+# Open the project's .Rproj file before running chunks.
+# Install psych once in the Console if needed: install.packages("psych")
+
+library(psych)
+
+h1_data <- read.csv("data/processed_data/LR_h1_data.csv")
+h2_data <- read.csv("data/processed_data/LR_h1_data.csv")
+
+```
+
+## 2. Look at the distribution first
+
+```{r histogram}
+# A histogram groups numerical values into intervals (bins).
+# Bar height shows how many observations fall in each interval.
+# Start by looking at the distribution before calculating summary statistics.
+# Add readable labels to the same histogram.
+
+#barplot for categorical variables
+barplot(h1_data$cot_class,
+     main = "Distribution of reported social class",
+     xlab = "Social Class")
+
+#histograms
+hist(h1_data$collect_avg,
+     main = "Distribution of average collectivist values",
+     xlab = "Collectivist values (1-7)")
+#pretty well distributed, normal
+
+hist(h2_data$love_avg,
+     main = "Distribution of average experience of romantic love",
+     xlab = "Average experience of love (1-5)")
+#not very normal, most data is higher, left skew
+
+hist(h2_data$gen_eq_avg,
+     main = "Distribution of average belief in gender equality",
+     xlab = "Average belief in gender equality (1-7)")
+#very skewed, most data is higher, left skew
+
+```
+
+## 3. One statistic at a time
+
+```{r individual_statistics}
+# Mean: add the scores and divide by the number of observed responses.
+mean(h1_data$collect_avg, na.rm = TRUE) #4.3076
+mean(h2_data$love_avg, na.rm = TRUE) #4.0747
+mean(h2_data$gen_eq_avg, na.rm = TRUE) #5.7567
+
+# Median: the middle score after sorting the responses.
+median(h1_data$collect_avg, na.rm = TRUE) #4.333
+median(h2_data$love_avg, na.rm = TRUE) #4.266
+median(h2_data$gen_eq_avg, na.rm = TRUE) #6.333
+
+# Table: count how many people are in each category.
+table(h1_data$cot_class, useNA = "ifany")
+
+# Range: return the minimum and maximum, rather than their difference.
+range(h1_data$collect_avg, na.rm = TRUE) # 1-7
+range(h2_data$love_avg, na.rm = TRUE) # 1-5
+range(h2_data$gen_eq_avg, na.rm = TRUE) # 1-7
+
+# IQR: the 75th percentile minus the 25th percentile.
+IQR(h1_data$collect_avg, na.rm = TRUE) # 2
+IQR(h2_data$love_avg, na.rm = TRUE) # 1.333
+IQR(h2_data$gen_eq_avg, na.rm = TRUE) # 2
+```
+
+## 4. Standardize a variable
+
+```{r standardize}
+# scale() uses z = (original score - mean) / standard deviation by default.
+# Keep the original commitment scores and store the standardized values separately.
+# scale() returns a matrix; as.numeric() makes a simple numeric column.
+h1_data$collect_avg_z <- scale(h1_data$collect_avg)
+
+h2_data$love_avg_z <- scale(h2_data$love_avg)
+h2_data$gen_avg_z <- scale(h2_data$gen_eq_avg)
+# Standardized scores have mean approximately 0 and standard deviation 1.
+#should be able to check!
+mean(h2_data$gen_avg_z, na.rm = TRUE) #basically zero
+
+sd(h2_data$gen_avg_z, na.rm = TRUE) #1
+```
+
+## 5. Covariance and correlation
+
+```{r association}
+# Covariance describes whether two variables tend to move together.
+# Positive: higher values tend to occur together. Negative: higher values tend to accompany lower values.
+# Its size depends on the units and is not restricted to -1 through 1.
+cov(h2_data$gen_eq_avg, h2_data$love_avg, use = "complete.obs") #0.020059, not strong
+
+# Pearson correlation expresses a linear association on a -1 to 1 scale.
+cor(h2_data$gen_eq_avg, h2_data$love_avg, use = "complete.obs") #0.016547, also not strong
+
+# Select numerical variables only; do not include participant IDs or category codes.
+corData_h2 <- h2_data[,c("gen_eq_avg", "love_avg")]
+cor(corData_h2, use = "complete.obs")
+#prints out nice little correlation matrix
+
+# A correlation matrix gives the correlation for each pair of columns.
+# The diagonal is 1 because each variable is correlated with itself.
+```
+
+## 6. Several statistics at once
+
+```{r combined_summaries}
+# summary() reports minimum, quartiles, median, mean, maximum, and missing counts when present.
+summary(corData_h2)
+
+# psych::describe() reports n, mean, SD, median, minimum, maximum, range width (max minus min), skewness, kurtosis, and other summaries.
+# However it does not report every statistic above: compute IQR, cov(), and cor() separately.
+describe(corData_h2)
+```
+

@@ -85,7 +85,7 @@ table(data$cot_class, useNA = "ifany") # look at data spread, a lot of NA
 
 data$cot_class <- factor(data$cot_class,
                          c(1, 2, 3, 4, 5),
-                         c("Lower", "Lower middle", "Middle", 
+                         c("Lower", "Lower Middle", "Middle", 
                            "Upper Middle", "Upper"))
 
 ```
@@ -94,100 +94,49 @@ data$cot_class <- factor(data$cot_class,
 ## 4. Validate collectivism values, calculate mean and make H1 dataset
 
 ```{r validate collective behavior}
-###JK: Please recode the missing-value markers before converting these items to numbers. ###
-# as.numeric() does not turn -99 into NA: -99 is already a number.
-# "N/A" and blank text can become NA with a warning, but it is clearer to explicitly handle all the missing codes listed in the codebook first.
-# Your H1 uses items 1, 2, and 4. Here is a replacement for the four as.numeric() lines immediately below. Use this before calculating scores.
-# collect_items <- c("Individualism_col_1", "Individualism_col_2",
-#                    "Individualism_col_4")
-# for (i in collect_items) {
-#   data[data[, i] %in% c("-99", "N/A", "NA", ""), i] <- NA
-#   data[, i] <- as.numeric(data[, i])
-# }
-###  End of comment ###
+#group all 3 individualism/collectivism variables and make them numeric
 
-#group all 4 individualism/collectivism variables and make them numeric
-data$Individualism_col_1 <- as.numeric(data$Individualism_col_1)
-data$Individualism_col_2 <- as.numeric(data$Individualism_col_2)
-data$Individualism_col_3 <- as.numeric(data$Individualism_col_3)
-data$Individualism_col_4 <- as.numeric(data$Individualism_col_4)
+data[,3:23] <- apply(data[,3:23], 2, function(x) ifelse(x== -99, NA, x))
 
+collect_items <- c("Individualism_col_1", "Individualism_col_2","Individualism_col_4")
 
-collect <- c("Individualism_col_1", "Individualism_col_2",
-               "Individualism_col_3", "Individualism_col_4")
+for (i in collect_items) {
+  data[data[, i] %in% c("-99", "N/A", "NA", ""), i] <- NA
+  
+  data[, i] <- as.numeric(data[, i]) }
+
 
 #see summary of variables
-summary(data[,collect])
+summary(data[,collect_items])
 
 #count NAs
-colSums(is.na(data[,collect]))
+colSums(is.na(data[,collect_items]))
 
-###JK: These are separate 1-7 ratings, not a fixed-total allocation task. ###
-# For example, answering 4 on each of four items gives a total of 16, which is perfectly valid. The responses do not need to add up to 28.
-# Each item should be between 1 and 7, not between 0 and 28.
-# Replace the total-score and range checks below (through collect_range) with checks on the three items you actually use in your score:
-# summary(data[, collect_items])
-# colSums(is.na(data[, collect_items]))
-# colSums(data[, collect_items] < 1 | data[, collect_items] > 7, na.rm = TRUE)
-# If the last line reports any values outside 1-7, inspect them before scoring.
-###  End of comment ###
+#check if data is all within range
+colSums(data[, collect_items] < 1 | data[, collect_items] > 7, na.rm = TRUE)
 
-#calculate total score; leave the total NA if any item is missing
-data$collect_total <- rowSums(data[,collect], na.rm = FALSE)
-summary(data$collect)
-
-#count those that do not sum to 28
-sum(data$collect_total != 28 & !is.na(data$collect_total))
-
-#check that each observed allocation is between 0 and 28
-data$collect_range <- rowSums(
-  data[, collect] < 0 | data[,collect] > 28,
-  na.rm = TRUE
-) == FALSE
 
 #make h1Data with ID, socioeconomic class, and cleaned collectivism variables, and avg value for overall collectivism (avg of q1,2,4)
 
-###JK: Please create h1_data before referring to it in a calculation. ###
-# The assignment h1_data <- ... happens only after the right-hand side finishes.
-# In the code below, mutate() and select() refer to h1_data before it exists.
-# In a fresh R session, this stops with "object 'h1_data' not found".
-# Also, your positive-value checks cover items 2, 3, and 4, but not item 1.
-# Item 3 does not contribute to your mean, so requiring an answer to it unnecessarily excludes people who answered all three items you need.
-# After the missing-value cleaning suggested above, replace the pipeline below (from h1_data <- through mutate()) with these separate steps:
-# h1_data <- data[, c("ResponseId", "cot_class", collect_items)]
-# h1_data <- h1_data[complete.cases(h1_data), ]
-# h1_data$collect_avg <- rowMeans(h1_data[, collect_items], na.rm = FALSE)
-###  End of comment ###
-
 h1_data <- data %>%
-  select("ResponseId", "cot_class", "Individualism_col_1", "Individualism_col_2",
-               "Individualism_col_3", "Individualism_col_4") %>%
-  filter(!is.na(data$Individualism_col_1) & !is.na(data$Individualism_col_2) &
-        !is.na(data$Individualism_col_3) & !is.na(data$Individualism_col_4) &
-         data$Individualism_col_2 > 0 & data$Individualism_col_3 > 0 &
-          data$Individualism_col_4 > 0) %>%
-  mutate(h1_data, collect_avg = rowMeans(select(h1_data,
-                                              c("Individualism_col_1",
-                                                "Individualism_col_2",
-                                                "Individualism_col_4")),
-                                         na.rm = TRUE))
- 
-#checking if -99 is gone, it wasn't so filtered those out
+  select("ResponseId", "cot_class", "Individualism_col_1", "Individualism_col_2", "Individualism_col_4") %>%
+  na.omit()
+  
+
+#yipppeee data is clean
 summary(h1_data)
+
 
 #some basic subtraction, total number of NAs was 19,555 and original number of observations was 117,293 so that would leave us with 97738 observations left, but then 6 got filtered out because they were -99, leaving us with the final number in h1_data being 97732
 #117293 - 97732 = 19561 (19555 NAs + 6 -99 )
 
-###JK: na.omit() already acts on the table passed through the pipe. ###
-# The extra H1data$cot_class argument is unnecessary, and H1data also has different capitalization from H1Data. To keep this step straightforward:
-# H1Data <- h1_data %>%
-#   select(ResponseId, cot_class, collect_avg) %>%
-#   na.omit()
-###  End of comment ###
+#calculate means
 
-H1Data <- h1_data %>%
-  select("ResponseId", "cot_class", "collect_avg") %>%
-  na.omit(H1data$cot_class)
+h1_data$collect_avg <- rowMeans(h1_data[, c(3:5)])
+
+#final data
+h1_data <- h1_data %>%
+  select("ResponseId", "cot_class", "collect_avg")
 
 ```
 
@@ -209,51 +158,38 @@ h2_data_raw <- data %>%
 summary(h2_data_raw)
 
 
-###JK: Clean all three gender-equality items before filtering or reversing them. ###
-# na.omit() removes actual NA values, but not the text "N/A", blanks, or -99.
-# The filter below checks only items 1 and 3, leaving item 2 unchecked.
-# It also compares values with 0 before converting the columns to numeric.
-# Your saved H2 scores match the raw data, but these checks do not reliably handle every missing-value marker documented for all three items.
-# Replace the block below, from h2_data_1 <- through the three as.numeric() lines, with this code. Then keep your existing 8 - x reversal code.
+#cleaning data - turn all missing data into NA
+equality_items <- paste0("Gender_Equality_", 1:3)
+for (item in equality_items) {
+   h2_data_raw[h2_data_raw[, item] %in% c("-99", "N/A", "NA", ""), item] <- NA
+   h2_data_raw[, item] <- as.numeric(h2_data_raw[, item])
+}
 
-# equality_items <- paste0("Gender_Equality_", 1:3)
-# for (item in equality_items) {
-#   h2_data_raw[h2_data_raw[, item] %in% c("-99", "N/A", "NA", ""), item] <- NA
-#   h2_data_raw[, item] <- as.numeric(h2_data_raw[, item])
-# }
-# summary(h2_data_raw[, equality_items])
-# colSums(h2_data_raw[, equality_items] < 1 |
-#         h2_data_raw[, equality_items] > 7, na.rm = TRUE)
-# love_items <- paste0("Love_", 1:15)
-# colSums(h2_data_raw[, love_items] < 1 |
-#         h2_data_raw[, love_items] > 5, na.rm = TRUE)
+#check unique data, mainly nas now
+summary(h2_data_raw[, equality_items])
 
-# If these range checks find unexpected values, inspect them before continuing.
+#check that all values are in range
+colSums(h2_data_raw[, equality_items] < 1 |
+         h2_data_raw[, equality_items] > 7, na.rm = TRUE)
 
-# H2_data_cln <- na.omit(h2_data_raw)
+#cleaning data - turn all missing data into NA
+love_items <- paste0("Love_", 1:15)
+for (item in love_items) {
+   h2_data_raw[h2_data_raw[, item] %in% c("-99", "N/A", "NA", ""), item] <- NA
+   h2_data_raw[, item] <- as.numeric(h2_data_raw[, item])
+}
 
-# This keeps your current rule: require all 3 equality and all 15 love items.
-# The special missing code here is -99, not 999; please update that comment too.
-###  End of comment ###
+#check that all data is in range
+colSums(h2_data_raw[, love_items] < 1 |
+         h2_data_raw[, love_items] > 5, na.rm = TRUE)
 
-#clean dataset with filtered NAs and 0s and 999s, checked NAs with summary
-h2_data_1 <- na.omit(h2_data_raw)
-
-#clear out 999s
-H2_data_cln <- h2_data_1 %>%
-  filter(h2_data_1$Gender_Equality_1 > 0 & h2_data_1$Gender_Equality_3 > 0)
-
-#make variables numeric 
-H2_data_cln$Gender_Equality_1 <- as.numeric(H2_data_cln$Gender_Equality_1)
-H2_data_cln$Gender_Equality_2 <- as.numeric(H2_data_cln$Gender_Equality_2)
-H2_data_cln$Gender_Equality_3 <- as.numeric(H2_data_cln$Gender_Equality_3)
+#remove NAs
+h2_data_cln <- na.omit(h2_data_raw)
 
 #reverse code values
-h2_data_rev <- H2_data_cln %>%
+h2_data_rev <- h2_data_cln %>%
   mutate(across("Gender_Equality_1":"Gender_Equality_3", ~ 8 - .)) %>%
   rename("Gender_Equality_1R" = "Gender_Equality_1", "Gender_Equality_2R" = "Gender_Equality_2", "Gender_Equality_3R" = "Gender_Equality_3" )
-
-is.numeric(H2_data_cln$Gender_Equality_3)
 ```
 
 ## 6. Create mean variables for H2 
@@ -274,8 +210,8 @@ h2_data_avgs <- h2_data_rev %>%
                                          na.rm = TRUE))
 
 #just final values!
-H2Data <- h2_data_avgs %>%
-  select("ResponseId", "love_avg", "gen_eq_avg")
+h2_data <- h2_data_avgs %>%
+  select("ResponseId", "gen_eq_avg", "love_avg")
 ```
 
 
@@ -284,22 +220,22 @@ H2Data <- h2_data_avgs %>%
 ```{r final_tables}
 #check rows, columns, types, and missing values in h1Data
 #one row per participant, one column per variable
-dim(H1Data)
-str(H1Data)
-head(H1Data)
-colSums(is.na(H1Data))
-table(H1Data$cot_class,useNA="ifany")
-range(H1Data$collect_avg)
-sum(duplicated(H1Data$ResponseId))
+dim(h1_data)
+str(h1_data)
+head(h1_data)
+colSums(is.na(h1_data))
+table(h1_data$cot_class,useNA="ifany")
+range(h1_data$collect_avg)
+sum(duplicated(h1_data$ResponseId))
 
 #repeat the checks for h2Data; both scores should be within 1-7
-dim(H2Data)
-str(H2Data)
-head(H2Data)
-colSums(is.na(H2Data))
-range(H2Data$love_avg)
-range(H2Data$gen_eq_avg)
-sum(duplicated(H2Data$ResponseId))
+dim(h2_data)
+str(h2_data)
+head(h2_data)
+colSums(is.na(h2_data))
+range(h2_data$love_avg)
+range(h2_data$gen_eq_avg)
+sum(duplicated(h2_data$ResponseId))
 
 #all of it checks out! yay!
 ```
@@ -313,44 +249,18 @@ display the formatted codebooks.
 ```{r variable_labels}
 #add a description to each h1Data column, in column order
 #include the source codes, meaning, and units
-
-###JK: Please correct the collectivism scale description: it is 1-7, not 1-5. ###
-# Its anchors are "Definitely disagree" and "Definitely agree".
-# You can replace the H1 label assignment below with:
-# var_label(H1Data) <- c(
-#   "Unique participant ID (ResponseId)",
-#   "Self-reported social class: 1=Lower, 2=Lower middle, 3=Middle, 4=Upper middle, 5=Upper; stored as labeled categories.",
-#   "Collectivism: mean of Individualism_col_1, 2, and 4; all three responses required. Items are 1=Definitely disagree to 7=Definitely agree. No reversal; higher scores indicate greater collectivism."
-# )
-###  End of comment ###
-
-var_label(H1Data) <- c(
+var_label(h1_data) <- c(
   "Unique participant ID (ResponseId)",
-  "Reported socal class: original codes 1=Lower, 2=Lower middle, 3=Middle,
-  4=Upper Middle, 5=Upper; now stored as a factor 1, 2, 3, 4, 5)",
-  "Average reported collectivist values: Average score across 3 questions on a Likert scale from 1-5, 1 = Strongly disagree, 5 = Strongly agree, zero is not valid"
+  "Self-reported social class: 1=Lower, 2=Lower middle, 3=Middle, 4=Upper middle, 5=Upper; stored as labeled categories.",
+  "Collectivism: mean of Individualism_col_1, 2, and 4; all three responses required. Items are 1=Definitely disagree to 7 = Definitely agree. No reversal; higher scores indicate greater collectivism."
 )
 
 #add a description to each h2Data column, in column order
 #include response anchors and the commitment scoring rule
-
-###JK: These labels are assigned by column position, so the two score labels are swapped. ###
-# H2Data is ordered ResponseId, love_avg, gen_eq_avg, but the descriptions below put gender equality before love. Also, Love items are 1-5, not 1-7.
-# Replace the H2 label assignment below with:
-# var_label(H2Data) <- c(
-#   "Unique participant ID (ResponseId)",
-#   "Overall romantic love: mean of Love_1-15; all 15 responses required. Items are 1=Not at all to 5=Extremely. No reversal; higher scores indicate greater romantic love.",
-#   "Gender equality: mean of Gender_Equality_1-3 after reversing each item with 8 - x; all three responses required. Scores range from 1 to 7; higher scores indicate greater endorsement of gender equality."
-# )
-# Please also update the earlier final-table comment: love_avg should be within 1-5, while gen_eq_avg should be within 1-7.
-###  End of comment ###
-
-var_label(H2Data) <- c(
+var_label(h2_data) <- c(
   "Unique participant ID (ResponseId)",
-  "Average belief in gender equality: average of 3 reverse-coded questions,
-   1 = Definitely disagree, 7= Definitely agree, after reverse-code, higher scores are associated with more belief in gender equality, zero is not valid",
-  "Overall romantic love: mean of 15 questions, each 1 = Not at all to 7 = Extremely; no reverse coding, zero is not valid"
-)
+  "Gender equality: mean of Gender_Equality_1-3 after reversing each item with 8 - x; all three responses required. Scores range from 1 to 7; higher scores indicate greater endorsement of gender equality.",
+  "Overall romantic love: mean of Love_1-15; all 15 responses required. Items are 1=Not at all to 5=Extremely. No reversal; higher scores indicate greater romantic love.")
 
 ```
 
@@ -358,7 +268,7 @@ H1 includes participants with an ID, valid reported perceived social class, and 
 
 ```{r h1_codebook}
 #generate the h1Data codebook
-compact_codebook(H1Data)
+compact_codebook(h2_data)
 
 ```
 
@@ -366,7 +276,7 @@ H2 includes participants with an ID, average gender equality belief score based 
 
 ```{r h2_codebook}
 #generate the h2Data codebook
-compact_codebook(H2Data)
+compact_codebook(h2_data)
 
 ```
 
@@ -377,13 +287,14 @@ compact_codebook(H2Data)
 dir.create("data/processed_data",recursive=T,showWarnings=F)
 
 #save h1Data and h2Data without an extra row-number column
-write.csv(H1Data,"data/processed_data/LRpractice_h1.csv",row.names=F)
-write.csv(H2Data,"data/processed_data/LRpractice_h2.csv",row.names=F)
+write.csv(h1_data,"data/processed_data/LR_h1_data.csv",row.names=F)
+write.csv(h2_data,"data/processed_data/LR_h2_data.csv",row.names=F)
 
 #read the files back and confirm their dimensions
-H1Saved <- read.csv("data/processed_data/LRpractice_h1.csv")
-H2Saved <- read.csv("data/processed_data/LRpractice_h2.csv")
-dim(H1Saved)
-dim(H2Saved)
+h1_saved <- read.csv("data/processed_data/LR_h1_data.csv")
+h2_saved <- read.csv("data/processed_data/LR_h2_data.csv")
+dim(h1_saved)
+dim(h2_saved)
 
 ```
+
