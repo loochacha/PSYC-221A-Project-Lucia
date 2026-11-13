@@ -14,6 +14,12 @@ editor_options:
 library(psych)
 
 h1_data <- read.csv("data/processed_data/LR_h1_data.csv")
+
+###JK: Load the H2 file for h2_data. ###
+# Both reads currently load LR_h1_data.csv, so h2_data has no love_avg or gen_eq_avg columns. Replace the second read with:
+# h2_data <- read.csv("data/processed_data/LR_h2_data.csv")
+###  End of comment ###
+
 h2_data <- read.csv("data/processed_data/LR_h1_data.csv")
 
 ```
@@ -27,6 +33,13 @@ h2_data <- read.csv("data/processed_data/LR_h1_data.csv")
 # Add readable labels to the same histogram.
 
 #barplot for categorical variables
+###JK: Count the social-class categories before making the bar plot. ###
+# cot_class contains category labels. table() gives barplot() the count for each category.
+# also, you might want to organize the order of these variable using factor() function, because now it is ordered as Lower, Lower Middle, Middle, Upper, Upper Middle - seems like Upper Middle has to come before Upper?
+# After reorganizing (if needed), use:
+# barplot(table(h1_data$cot_class), main = "Distribution of reported social class", xlab = "Social class")
+###  End of comment ###
+
 barplot(h1_data$cot_class,
      main = "Distribution of reported social class",
      xlab = "Social Class")
