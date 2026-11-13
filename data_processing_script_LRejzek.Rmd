@@ -268,7 +268,7 @@ H1 includes participants with an ID, valid reported perceived social class, and 
 
 ```{r h1_codebook}
 #generate the h1Data codebook
-compact_codebook(h2_data)
+compact_codebook(h1_data)
 
 ```
 

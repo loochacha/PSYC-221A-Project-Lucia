@@ -15,12 +15,7 @@ library(psych)
 
 h1_data <- read.csv("data/processed_data/LR_h1_data.csv")
 
-###JK: Load the H2 file for h2_data. ###
-# Both reads currently load LR_h1_data.csv, so h2_data has no love_avg or gen_eq_avg columns. Replace the second read with:
-# h2_data <- read.csv("data/processed_data/LR_h2_data.csv")
-###  End of comment ###
-
-h2_data <- read.csv("data/processed_data/LR_h1_data.csv")
+h2_data <- read.csv("data/processed_data/LR_h2_data.csv")
 
 ```
 
@@ -32,17 +27,13 @@ h2_data <- read.csv("data/processed_data/LR_h1_data.csv")
 # Start by looking at the distribution before calculating summary statistics.
 # Add readable labels to the same histogram.
 
-#barplot for categorical variables
-###JK: Count the social-class categories before making the bar plot. ###
-# cot_class contains category labels. table() gives barplot() the count for each category.
-# also, you might want to organize the order of these variable using factor() function, because now it is ordered as Lower, Lower Middle, Middle, Upper, Upper Middle - seems like Upper Middle has to come before Upper?
-# After reorganizing (if needed), use:
-# barplot(table(h1_data$cot_class), main = "Distribution of reported social class", xlab = "Social class")
-###  End of comment ###
+h1_data$cot_class <- factor(h1_data$cot_class,
+       levels  = c("Lower", "Lower Middle", "Middle", "Upper Middle","Upper"))
 
-barplot(h1_data$cot_class,
+barplot(table(h1_data$cot_class),
      main = "Distribution of reported social class",
      xlab = "Social Class")
+
 
 #histograms
 hist(h1_data$collect_avg,
@@ -131,6 +122,8 @@ cor(corData_h2, use = "complete.obs")
 ```{r combined_summaries}
 # summary() reports minimum, quartiles, median, mean, maximum, and missing counts when present.
 summary(corData_h2)
+
+library(psych)
 
 # psych::describe() reports n, mean, SD, median, minimum, maximum, range width (max minus min), skewness, kurtosis, and other summaries.
 # However it does not report every statistic above: compute IQR, cov(), and cor() separately.

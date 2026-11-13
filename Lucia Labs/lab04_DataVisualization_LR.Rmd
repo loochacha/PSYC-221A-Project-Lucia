@@ -21,6 +21,7 @@ H1: People with lower perceived social class will have more collectivist attitud
 H2: People who value gender equality will report higher overall romantic love with their partner.
 
 ```{r load package}
+
 library(ggplot2)
 library(ggrain)
 file.exists("data/processed_data/LR_h2_data.csv")
@@ -78,7 +79,7 @@ h2FigureScatter <- ggplot(data = h2_data,
                        aes(x = gen_eq_avg,
                            y = love_avg
                            )) +
-  geom_jitter(width = 0.12, height = 0.04, alpha = 0.04, size = 0.6) +
+  geom_jitter(alpha = 0.04, size = 0.6) +
   labs(x = "Average Belief in Gender Equality",
        y = "Average Experience of Overall Romantic Love",
        title = "Experience of Overall Romantic Love by Belief in Gender Equality") +
