@@ -128,5 +128,8 @@ library(psych)
 # psych::describe() reports n, mean, SD, median, minimum, maximum, range width (max minus min), skewness, kurtosis, and other summaries.
 # However it does not report every statistic above: compute IQR, cov(), and cor() separately.
 describe(corData_h2)
+
+write.csv(h1_data,"data/processed_data/LR_h1_data.csv",row.names=F)
+write.csv(h2_data,"data/processed_data/LR_h2_data.csv",row.names=F)
 ```
 

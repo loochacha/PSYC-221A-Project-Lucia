@@ -1,0 +1,116 @@
+---
+title: "Collectivism, Love Experience, Gender Equality and Social Status"
+author: "Lucia Cichowski Rejzek"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  echo: true
+---
+
+```{r}
+#| label: load-data
+#| include: false
+
+library(psych)
+library(ggplot2)
+library(ggrain)
+
+file.exists("data/processed_data/LR_h2_data.csv")
+
+h1_data <- read.csv("data/processed_data/LR_h1_data.csv")
+
+h2_data <- read.csv("data/processed_data/LR_h2_data.csv")
+```
+
+## Hypothesis 1
+
+People with lower perceived social class will have more collectivist attitudes. 
+
+
+### Variables and descriptive statistics
+
+- **Self-reported social class: (`cot_class`):** A categorical variable with five groups: 1=Lower, 2=Lower middle, 3=Middle, 4=Upper middle, 5=Upper.
+- **Average Collectivism (`collect_avg`):** Mean of three questions surrounding collectivist values, utilizing a 1-7 Likert scale. No reversal; higher scores indicate greater collectivism.
+
+```{r}
+#| label: h1-descriptives
+# Count respondents in each group.
+table(h1_data$cot_class)
+
+# Summarize attractiveness points separately for each group.
+by(h1_data$collect_avg, h1_data$cot_class, summary)
+```
+
+### Graph
+
+@fig_collectivism shows the distribution of points by self-reported social class. The half-violin shows the shape of the distribution, the box summarizes the median and quartiles, and the dots represent individual responses.
+
+```{r}
+#| label: fig-collectivism
+#| fig-cap: "Average collectivist values by self-reported social class."
+#| fig-width: 8
+#| fig-height: 5
+
+ggplot(data = h1_data,
+                       aes(x = cot_class,
+                           y = collect_avg,
+                           fill = cot_class)) +
+  geom_rain(alpha = 0.5) +
+  labs(x = "Self-Reported Social Class",
+       y = "Average Belief in Collectivism",
+       fill = "Social Class",
+       title = "Average Belief in Collectivism by Self-Reported Social Class") +
+  theme_minimal(base_size = 10)
+
+```
+
+
+## Hypothesis 2
+
+People who value gender equality will report higher overall romantic love with their partner.
+
+### Variables and descriptive statistics
+  
+- **Average belief in gender equality (`gen_eq_avg`):** A mean of three reverse-coded questions about gender equality. Scores range from 1 to 7; higher scores indicate greater endorsement of gender equality.
+
+- **Overall romantic love (`love_avg`):** A mean of 15 Likert-type questions about romantic love, all 15 responses required. Each item ranges from 1 (Not at all) to 5 (Extremely); higher scores indicate greater romantic love.
+
+```{r}
+#| label: h2-descriptives
+summary(h2_data[, c("gen_eq_avg", "love_avg")])
+```
+
+### Graph
+
+@fig_love shows the relationship between belief in gender equality and overall experiences of romantic love. Points are jittered to make overlapping responses easier to see; the recorded scores are unchanged. The line summarizes the linear trend.
+
+```{r}
+#| label: fig_love
+#| fig-cap: "Belief in gender equality and overall experience of romantic love."
+#| fig-width: 8
+#| fig-height: 5
+
+ggplot(data = h2_data,
+                       aes(x = gen_eq_avg,
+                           y = love_avg
+                           )) +
+  geom_jitter(width = 0.12, height = 0.04, alpha = 0.04, size = 0.6) +
+  labs(x = "Average Belief in Gender Equality",
+       y = "Average Experience of Overall Romantic Love",
+       title = "Experience of Overall Romantic Love by Belief in Gender Equality") +
+  theme_minimal() +
+  geom_smooth(method = "lm")
+
+```
+
+### Observed trend
+
+```{r}
+#| label: correlation
+r <- cor(h2_data$gen_eq_avg, h2_data$love_avg, use = "complete.obs")
+round(r, 2)
+```
+
+The correlation was `{r} round(r, 2)`, indicating a weak negative association. Respondents who reported more confidence in finding a new partner tended to report lower commitment.
