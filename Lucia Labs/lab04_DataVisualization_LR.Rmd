@@ -20,7 +20,7 @@ H2: People who value gender equality will report higher overall romantic love wi
 ```{r load package}
 library(ggplot2)
 library(ggrain)
-
+file.exists("data/processed_data/LR_h2_data.csv")
 ```
 
 ## Load the processed data

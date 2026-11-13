@@ -20,7 +20,7 @@ H2: People who value gender equality will report higher overall romantic love wi
 
 ```{r load, message=FALSE}
 #load the codebook package
-rm(list = ls())
+
 library(codebook)
 
 #load data/raw/data_doctored.csv
