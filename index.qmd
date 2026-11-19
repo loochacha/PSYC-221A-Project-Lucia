@@ -10,12 +10,6 @@ execute:
   echo: true
 ---
 
-###JK: Use embed-resources so the published HTML includes its graphs and formatting. ###
-# Change embed-resource: true to embed-resources: true under html.
-# The current website opens, but its stylesheet and graph URLs fail to load. Render again, copy the new HTML to docs/index.html, and push it.
-###  End of comment ###
-
-
 ```{r}
 #| label: load-data
 #| include: false
@@ -54,10 +48,6 @@ by(h1_data$collect_avg, h1_data$cot_class, summary)
 ```
 
 ### Graph
-
-###JK: Match the two figure references to Quarto figure labels. ###
-# Use @fig-collectivism for the H1 reference. For H2, change both the chunk label and the paragraph reference to fig-love / @fig-love.
-###  End of comment ###
 
 @fig_collectivism shows the distribution of points by self-reported social class. The half-violin shows the shape of the distribution, the box summarizes the median and quartiles, and the dots represent individual responses.
 
@@ -126,10 +116,5 @@ ggplot(data = h2_data,
 r <- cor(h2_data$gen_eq_avg, h2_data$love_avg, use = "complete.obs")
 round(r, 2)
 ```
-
-###JK: Describe the H2 association using its actual variables and direction. ###
-# r is about +0.02, a very small positive association between gender-equality attitudes and overall romantic love.
-# Replace the negative-association wording and the sentence about confidence in finding a new partner and commitment with a sentence about gender equality and romantic love.
-###  End of comment ###
 
 The correlation was `{r} round(r, 2)`, indicating a weak negative association. Respondents who reported more confidence in finding a new partner tended to report lower commitment.
